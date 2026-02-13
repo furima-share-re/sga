@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SES Growth Dashboard｜動くモック（1ファイルHTML）</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1a33;
+      --panel2:#111f3d;
+      --text:#e8eefc;
+      --muted:#b8c6ee;
+      --line:#22345f;
+      --accent:#7aa2ff;
+      --good:#27c07d;
+      --warn:#ffb020;
+      --bad:#ff4d6d;
+      --chip:#152654;
+      --code:#0a1020;
+      --shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:24px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+      background: radial-gradient(1200px 800px at 20% 0%, #132556 0%, var(--bg) 55%);
+      color:var(--text);
+      line-height:1.6;
+    }
+    .wrap{max-width:1180px;margin:0 auto;}
+    header{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(122,162,255,.12), rgba(122,162,255,.04));
+      border-radius:16px;
+      padding:18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    h1{margin:0 0 6px;font-size:22px;letter-spacing:.3px;}
+    .sub{color:var(--muted);margin:0;}
+
+    .topbar{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:12px}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      appearance:none; border:1px solid rgba(122,162,255,.25);
+      background: rgba(21,38,84,.55);
+      color:var(--muted);
+      padding:8px 12px; border-radius:999px; cursor:pointer;
+      font-size:12.5px; font-weight:800;
+    }
+    .tab[aria-selected="true"]{ background: rgba(122,162,255,.18); color: var(--text); border-color: rgba(122,162,255,.55); }
+
+    .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    select, input[type="search"], input[type="month"], input[type="number"]{
+      background: rgba(17,31,61,.75);
+      border:1px solid var(--line);
+      color: var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      outline:none;
+      box-shadow: none;
+      font-size:13px;
+    }
+    label{color:var(--muted); font-size:12px}
+
+    main{margin-top:16px;}
+    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:16px;}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+
+    section{
+      border:1px solid var(--line);
+      background: rgba(15,26,51,.72);
+      border-radius:16px;
+      padding:16px;
+      box-shadow: var(--shadow);
+    }
+    h2{margin:0 0 10px;font-size:16px;}
+    h3{margin:14px 0 8px;font-size:13.5px;color:#d8e3ff}
+    p{margin:8px 0;}
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{ background: rgba(21,38,84,.85); border:1px solid rgba(122,162,255,.25); color:var(--muted); padding:6px 10px; border-radius:999px; font-size:12px; }
+
+    .status{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;}
+    .pill{padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px; border:1px solid rgba(255,255,255,.12);}
+    .good{background: rgba(39,192,125,.15); color:#bff5db; border-color: rgba(39,192,125,.35);} 
+    .warn{background: rgba(255,176,32,.14); color:#ffe5b1; border-color: rgba(255,176,32,.35);} 
+    .bad{background: rgba(255,77,109,.14); color:#ffd0d9; border-color: rgba(255,77,109,.35);} 
+
+    .kpi{display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:10px;}
+    @media (max-width: 980px){ .kpi{grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width: 520px){ .kpi{grid-template-columns: 1fr;} }
+    .card{background: rgba(17,31,61,.75); border:1px solid var(--line); border-radius:14px; padding:12px;}
+    .kpiLabel{color:var(--muted); font-size:11px; letter-spacing:.3px; text-transform:uppercase}
+    .kpiValue{font-size:22px; font-weight:950; margin-top:4px}
+    .kpiHint{color:var(--muted); font-size:11.5px; margin-top:4px}
+
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background: rgba(10,16,32,.85); border:1px solid rgba(122,162,255,.18); border-radius:12px; padding:12px; overflow:auto; color:#dfe9ff; font-size:12.5px;}
+    .hr{height:1px;background:var(--line);margin:12px 0;}
+
+    table{width:100%; border-collapse:collapse; margin-top:10px; font-size:12.5px;}
+    th,td{border:1px solid rgba(34,52,95,.85); padding:10px; vertical-align:top;}
+    th{color:#cfe0ff; text-align:left; background: rgba(122,162,255,.08); font-weight:900;}
+    tr:hover td{background: rgba(122,162,255,.05)}
+
+    .rowFlex{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-weight:950; font-size:11.5px; border:1px solid rgba(255,255,255,.12);}
+    .bHigh{background: rgba(255,77,109,.16); color:#ffd0d9; border-color: rgba(255,77,109,.35);} 
+    .bMed{background: rgba(255,176,32,.14); color:#ffe5b1; border-color: rgba(255,176,32,.35);} 
+    .bLow{background: rgba(122,162,255,.10); color:#d8e3ff; border-color: rgba(122,162,255,.35);} 
+
+    .btn{
+      appearance:none; cursor:pointer;
+      background: rgba(122,162,255,.14);
+      border:1px solid rgba(122,162,255,.35);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:900;
+      font-size:12.5px;
+    }
+    .btn:hover{background: rgba(122,162,255,.20)}
+
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; opacity:.95;}
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    .hidden{display:none !important}
+
+    .funnel{display:grid; grid-template-columns: 1fr 80px 1fr; gap:10px; align-items:center; margin-top:10px}
+    .fStep{background: rgba(17,31,61,.75); border:1px solid var(--line); border-radius:14px; padding:12px}
+    .fName{color:#d8e3ff; font-weight:950}
+    .fValue{font-size:20px; font-weight:950; margin-top:4px}
+    .fArrow{color: var(--muted); text-align:center; font-weight:900}
+
+    .alertBox{border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:12px; margin-top:10px}
+    .aGood{background: rgba(39,192,125,.10); border-color: rgba(39,192,125,.25)}
+    .aWarn{background: rgba(255,176,32,.10); border-color: rgba(255,176,32,.25)}
+    .aBad{background: rgba(255,77,109,.10); border-color: rgba(255,77,109,.25)}
+    .aTitle{font-weight:950}
+    .aDesc{color:var(--muted); font-size:12px; margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>SES Growth Dashboard｜動くモック（1ファイルHTML）</h1>
+      <p class="sub">KGI：新規SES契約（月次）／KPI：セミナー→打診→説明→入学→SES の詰まり検知</p>
+
+      <div class="topbar">
+        <div class="tabs" role="tablist" aria-label="画面タブ">
+          <button class="tab" role="tab" id="tab-dashboard" aria-selected="true" aria-controls="panel-dashboard" data-tab="dashboard">/dashboard</button>
+          <button class="tab" role="tab" id="tab-people" aria-selected="false" aria-controls="panel-people" data-tab="people">/people</button>
+          <button class="tab" role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts" data-tab="alerts">/alerts</button>
+          <button class="tab" role="tab" id="tab-about" aria-selected="false" aria-controls="panel-about" data-tab="about">設計</button>
+        </div>
+
+        <div class="controls" aria-label="共通操作">
+          <div>
+            <label for="month">対象月</label><br>
+            <input id="month" type="month" />
+          </div>
+          <div>
+            <label for="personSelect">参加者（Person）切替</label><br>
+            <select id="personSelect"></select>
+          </div>
+          <div>
+            <label for="q">検索（名前/メール）</label><br>
+            <input id="q" type="search" placeholder="例：田中 / example.com" />
+          </div>
+          <button class="btn" id="resetBtn" type="button">リセット</button>
+        </div>
+      </div>
+
+      <div class="status" aria-label="アラート色凡例">
+        <span class="pill good">OK</span>
+        <span class="pill warn">詰まり注意</span>
+        <span class="pill bad">詰まり危険</span>
+      </div>
+
+      <div class="chips" aria-label="思想タグ">
+        <span class="chip">❌ 売上管理ではない</span>
+        <span class="chip">⭕ ファネル詰まり検知</span>
+        <span class="chip">Server Actionで月次集計（想定）</span>
+        <span class="chip">Person + Status が単一情報源（SSOT）</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- DASHBOARD -->
+      <section id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
+        <h2>/dashboard（経営者ビュー）</h2>
+        <div class="kpi" id="dashKgi"></div>
+
+        <div class="grid" style="margin-top:14px">
+          <section style="padding:14px">
+            <h3>KPIファネル（今月）</h3>
+            <div id="funnel" class="funnel"></div>
+            <div class="footer">※ Person の各日時フィールドから月次件数をカウント</div>
+          </section>
+          <section style="padding:14px">
+            <h3>転換率アラート（しきい値）</h3>
+            <div id="rateAlerts"></div>
+            <div class="hr"></div>
+            <h3>転換率（今月）</h3>
+            <div id="rates" class="mono"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- PEOPLE -->
+      <section id="panel-people" class="hidden" role="tabpanel" aria-labelledby="tab-people">
+        <h2>/people（現場ビュー：リスト）</h2>
+        <div class="rowFlex" style="margin-top:6px">
+          <button class="btn" data-pfilter="all" type="button">全員</button>
+          <button class="btn" data-pfilter="invited-missing" type="button">打診漏れ</button>
+          <button class="btn" data-pfilter="explained-missing" type="button">説明未実施</button>
+          <button class="btn" data-pfilter="ses-missing" type="button">入学後SES未転換</button>
+          <button class="btn" data-pfilter="lost" type="button">LOST</button>
+        </div>
+        <div id="peopleTable"></div>
+        <div class="footer">※ 条件は「当月」だけでなくステータス停滞の抽出にも応用可能</div>
+      </section>
+
+      <!-- ALERTS -->
+      <section id="panel-alerts" class="hidden" role="tabpanel" aria-labelledby="tab-alerts">
+        <h2>/alerts（自動アラート）</h2>
+        <div class="rowFlex" style="margin-top:6px">
+          <button class="btn" data-afilter="all" type="button">全件</button>
+          <button class="btn" data-afilter="high" type="button">高</button>
+          <button class="btn" data-afilter="medium" type="button">中</button>
+          <button class="btn" data-afilter="low" type="button">低</button>
+        </div>
+        <div id="alertsTable"></div>
+        <div class="hr"></div>
+        <h3>アラートルール（モック）</h3>
+        <div class="mono" id="alertRules"></div>
+      </section>
+
+      <!-- ABOUT -->
+      <section id="panel-about" class="hidden" role="tabpanel" aria-labelledby="tab-about">
+        <h2>設計（このモックが対応する仕様）</h2>
+        <div class="mono">KGI：新規SES契約数（月次）
+
+KPI：
+- 有料セミナー（90分）実施数（※MVPでは別テーブル推奨。ここでは「開催数入力」で代替）
+- 個別説明会打診数（invitedAt）
+- 個別説明会実施数（explainedAt）
+- 新規入学者数（enrolledAt）
+
+データモデル（MVP）：Person + Status
+- seminarDate / invitedAt / explainedAt / enrolledAt / sesContractAt
+- status: SEMINAR / INVITED / EXPLAINED / ENROLLED / SES / LOST
+
+月次集計：Next.js Server Action で count（このHTMLは同等のロジックをJSで再現）
+
+詰まり検知しきい値（例）：
+- 打診率 < 30% → 黄色
+- 入学率 < 50% → 赤
+- SES転換率 < 60% → 赤</div>
+      </section>
+    </main>
+
+    <div class="footer">SES Growth Dashboard mock v0.2（単体HTML）</div>
+  </div>
+
+<script>
+  // ============================
+  // Utilities
+  // ============================
+  const today = new Date();
+  const dayMs = 24*60*60*1000;
+  const d = (daysAgo)=> new Date(today.getTime() - daysAgo*dayMs);
+  const fmt = (dt)=> {
+    if (!dt) return '-';
+    const x = new Date(dt);
+    const y = x.getFullYear();
+    const m = String(x.getMonth()+1).padStart(2,'0');
+    const da = String(x.getDate()).padStart(2,'0');
+    return `${y}-${m}-${da}`;
+  };
+  const ym = (dt)=> {
+    if (!dt) return null;
+    const x = new Date(dt);
+    return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}`;
+  };
+  const safeRate = (num, den)=> den===0 ? 0 : (num/den);
+  const pct = (x)=> `${Math.round(x*100)}%`;
+
+  // ============================
+  // Mock Data (Person + Status)
+  // ============================
+  // Status enum: SEMINAR / INVITED / EXPLAINED / ENROLLED / SES / LOST
+  const MOCK = {
+    // monthly seminar sessions (paid seminar 90min) - MVP input
+    seminarSessions: {
+      // YYYY-MM : count
+    },
+    people: [
+      {id:'p1', name:'田中 海斗', email:'kaito.tanaka@example.com', createdAt:d(400), seminarDate:d(120), invitedAt:d(110), explainedAt:d(100), enrolledAt:d(80), sesContractAt:d(20), status:'SES'},
+      {id:'p2', name:'佐藤 みさき', email:'misaki.sato@example.com', createdAt:d(220), seminarDate:d(60), invitedAt:d(50), explainedAt:d(46), enrolledAt:d(35), sesContractAt:null, status:'ENROLLED'},
+      {id:'p3', name:'鈴木 恒一', email:'koichi.suzuki@example.com', createdAt:d(200), seminarDate:d(45), invitedAt:d(40), explainedAt:null, enrolledAt:null, sesContractAt:null, status:'INVITED'},
+      {id:'p4', name:'高橋 玲奈', email:'rena.takahashi@example.com', createdAt:d(320), seminarDate:d(90), invitedAt:d(85), explainedAt:d(80), enrolledAt:null, sesContractAt:null, status:'EXPLAINED'},
+      {id:'p5', name:'伊藤 直樹', email:'naoki.ito@example.com', createdAt:d(25), seminarDate:d(10), invitedAt:null, explainedAt:null, enrolledAt:null, sesContractAt:null, status:'SEMINAR'},
+      {id:'p6', name:'山本 彩', email:'aya.yamamoto@example.com', createdAt:d(500), seminarDate:d(160), invitedAt:d(155), explainedAt:d(150), enrolledAt:d(130), sesContractAt:d(15), status:'SES'},
+      {id:'p7', name:'小林 恒一', email:'koichi.kobayashi@example.com', createdAt:d(260), seminarDate:d(70), invitedAt:d(68), explainedAt:d(66), enrolledAt:d(55), sesContractAt:null, status:'LOST'},
+      {id:'p8', name:'中村 さゆり', email:'sayuri.nakamura@example.com', createdAt:d(800), seminarDate:d(210), invitedAt:d(205), explainedAt:d(200), enrolledAt:d(180), sesContractAt:d(35), status:'SES'},
+      {id:'p9', name:'渡辺 恒一', email:'koichi.watanabe@example.com', createdAt:d(140), seminarDate:d(35), invitedAt:d(20), explainedAt:d(18), enrolledAt:null, sesContractAt:null, status:'EXPLAINED'},
+      {id:'p10', name:'加藤 美咲', email:'misaki.kato@example.com', createdAt:d(90), seminarDate:d(32), invitedAt:null, explainedAt:null, enrolledAt:null, sesContractAt:null, status:'SEMINAR'},
+    ]
+  };
+
+  // ============================
+  // Monthly KPI (JS mirror of Server Action)
+  // ============================
+  function monthRange(yyyyMm){
+    const [y,m] = yyyyMm.split('-').map(Number);
+    const start = new Date(y, m-1, 1);
+    const end = new Date(y, m, 1); // next month
+    return {start, end};
+  }
+
+  function inRange(dt, start, end){
+    if (!dt) return false;
+    const x = new Date(dt);
+    return x >= start && x < end;
+  }
+
+  function getMonthlyKPI(yyyyMm){
+    const {start, end} = monthRange(yyyyMm);
+    const people = MOCK.people;
+
+    const seminar = people.filter(p=> inRange(p.seminarDate, start, end)).length;
+    const invited = people.filter(p=> inRange(p.invitedAt, start, end)).length;
+    const explained = people.filter(p=> inRange(p.explainedAt, start, end)).length;
+    const enrolled = people.filter(p=> inRange(p.enrolledAt, start, end)).length;
+    const ses = people.filter(p=> inRange(p.sesContractAt, start, end)).length;
+
+    const conversionRates = {
+      inviteRate: safeRate(invited, seminar),
+      explainRate: safeRate(explained, invited),
+      enrollRate: safeRate(enrolled, explained),
+      sesRate: safeRate(ses, enrolled),
+    };
+
+    const seminarSessions = MOCK.seminarSessions[yyyyMm] ?? 0;
+
+    return { seminar, invited, explained, enrolled, ses, conversionRates, seminarSessions };
+  }
+
+  // ============================
+  // Funnel render
+  // ============================
+  function stepBox(name, value){
+    return `<div class="fStep"><div class="fName">${name}</div><div class="fValue">${value}</div></div>`;
+  }
+  function arrowBox(rate){
+    return `<div class="fArrow">↓<br><span class="chip" style="display:inline-block;margin-top:6px">${rate}</span></div>`;
+  }
+
+  // ============================
+  // Rate alerts (bottleneck detection)
+  // ============================
+  function rateAlertItem(level, title, desc){
+    const cls = level==='good' ? 'alertBox aGood' : level==='warn' ? 'alertBox aWarn' : 'alertBox aBad';
+    const pill = level==='good' ? '<span class="pill good">OK</span>' : level==='warn' ? '<span class="pill warn">注意</span>' : '<span class="pill bad">危険</span>';
+    return `<div class="${cls}"><div class="rowFlex"><div class="aTitle">${title}</div>${pill}</div><div class="aDesc">${desc}</div></div>`;
+  }
+
+  function rateAlerts(conversionRates){
+    const items = [];
+
+    // thresholds
+    const inviteRate = conversionRates.inviteRate;
+    const enrollRate = conversionRates.enrollRate;
+    const sesRate = conversionRates.sesRate;
+
+    // 打診率 < 30% → 黄色
+    items.push(inviteRate < 0.30
+      ? rateAlertItem('warn','打診率（セミナー→打診）','基準未満：打診率 < 30% → 打診オペを増やす/スクリプト改善')
+      : rateAlertItem('good','打診率（セミナー→打診）','基準クリア')
+    );
+
+    // 入学率 < 50% → 赤（説明→入学）
+    items.push(enrollRate < 0.50
+      ? rateAlertItem('bad','入学率（説明→入学）','基準未満：入学率 < 50% → 説明会内容/期待値調整/フォロー導線を点検')
+      : rateAlertItem('good','入学率（説明→入学）','基準クリア')
+    );
+
+    // SES転換率 < 60% → 赤（入学→SES）
+    items.push(sesRate < 0.60
+      ? rateAlertItem('bad','SES転換率（入学→SES）','基準未満：SES転換率 < 60% → 転換条件の明文化/面談・打ち手を起動')
+      : rateAlertItem('good','SES転換率（入学→SES）','基準クリア')
+    );
+
+    return items.join('');
+  }
+
+  // ============================
+  // Alerts (Cron + Slack imagined)
+  // ============================
+  function priorityBadge(p){
+    const cls = p==='high'?'badge bHigh':(p==='medium'?'badge bMed':'badge bLow');
+    const label = p==='high'?'高':(p==='medium'?'中':'低');
+    return `<span class="${cls}">優先度：${label}</span>`;
+  }
+
+  function alertsEngine(yyyyMm){
+    const k = getMonthlyKPI(yyyyMm);
+    const out=[];
+
+    // 1) rate-based alerts
+    if (k.conversionRates.inviteRate < 0.30) out.push({id:`rate-invite-${yyyyMm}`, priority:'medium', scope:'月次', target:'ファネル', reason:'打診率が30%未満', recommended:'打診数を増やす（リスト/スクリプト/担当割当）'});
+    if (k.conversionRates.enrollRate < 0.50) out.push({id:`rate-enroll-${yyyyMm}`, priority:'high', scope:'月次', target:'ファネル', reason:'入学率が50%未満', recommended:'説明会の期待値調整・フォロー導線を改善'});
+    if (k.conversionRates.sesRate < 0.60) out.push({id:`rate-ses-${yyyyMm}`, priority:'high', scope:'月次', target:'ファネル', reason:'SES転換率が60%未満', recommended:'転換ボトルネック面談→条件明文化→打ち手を決定'});
+
+    // 2) people-based bottlenecks (operational list)
+    const people = filteredPeople();
+    for (const p of people){
+      // stuck after seminar (no invite)
+      if (p.seminarDate && !p.invitedAt && p.status==='SEMINAR'){
+        out.push({id:`p-${p.id}-invite`, priority:'medium', scope:'Person', target:p.name, reason:'セミナー参加後、打診が未実施', recommended:'当日〜48hで打診。テンプレ送付→日程確保'});
+      }
+      // stuck after invite (no explained)
+      if (p.invitedAt && !p.explainedAt && (p.status==='INVITED')){
+        out.push({id:`p-${p.id}-explain`, priority:'medium', scope:'Person', target:p.name, reason:'打診済みだが説明会が未実施', recommended:'リマインド→候補日を3つ提示'});
+      }
+      // enrolled but no SES contract
+      if (p.enrolledAt && !p.sesContractAt && (p.status==='ENROLLED')){
+        out.push({id:`p-${p.id}-ses`, priority:'high', scope:'Person', target:p.name, reason:'入学後、SES未契約（転換停滞）', recommended:'転換条件の明文化→障害の特定→支援アクション'});
+      }
+      // lost
+      if (p.status==='LOST'){
+        out.push({id:`p-${p.id}-lost`, priority:'low', scope:'Person', target:p.name, reason:'LOST（離脱）', recommended:'理由の記録→再流入施策（任意）'});
+      }
+    }
+
+    // sort
+    const rank = {high:0, medium:1, low:2};
+    out.sort((a,b)=> rank[a.priority]-rank[b.priority] || a.target.localeCompare(b.target,'ja'));
+    return out;
+  }
+
+  // ============================
+  // Filters / People
+  // ============================
+  const STATE = {
+    tab: 'dashboard',
+    month: null,
+    pfilter: 'all',
+    afilter: 'all',
+    personId: 'p1',
+    q: ''
+  };
+
+  function filteredPeople(){
+    const ql = (STATE.q||'').trim().toLowerCase();
+    if (!ql) return MOCK.people;
+    return MOCK.people.filter(p=> (p.name+" "+p.email).toLowerCase().includes(ql));
+  }
+
+  function peopleByFilter(list, pfilter){
+    if (pfilter==='all') return list;
+    if (pfilter==='invited-missing') return list.filter(p=> p.seminarDate && !p.invitedAt && p.status==='SEMINAR');
+    if (pfilter==='explained-missing') return list.filter(p=> p.invitedAt && !p.explainedAt && p.status==='INVITED');
+    if (pfilter==='ses-missing') return list.filter(p=> p.enrolledAt && !p.sesContractAt && p.status==='ENROLLED');
+    if (pfilter==='lost') return list.filter(p=> p.status==='LOST');
+    return list;
+  }
+
+  // ============================
+  // Render: dashboard
+  // ============================
+  function renderDashboard(){
+    const k = getMonthlyKPI(STATE.month);
+
+    // KGI / KPI cards
+    const dash = document.getElementById('dashKgi');
+    dash.innerHTML = [
+      {l:'KGI：新規SES契約（今月）', v: k.ses, h:'sesContractAt が当月の件数'},
+      {l:'KPI：打診数（今月）', v: k.invited, h:'invitedAt が当月の件数'},
+      {l:'KPI：説明実施数（今月）', v: k.explained, h:'explainedAt が当月の件数'},
+      {l:'KPI：新規入学（今月）', v: k.enrolled, h:'enrolledAt が当月の件数'},
+    ].map(x=>`
+      <div class="card">
+        <div class="kpiLabel">${x.l}</div>
+        <div class="kpiValue">${x.v}</div>
+        <div class="kpiHint">${x.h}</div>
+      </div>
+    `).join('');
+
+    // funnel
+    const f = document.getElementById('funnel');
+    f.innerHTML = [
+      stepBox('セミナー（参加）', k.seminar),
+      arrowBox(pct(k.conversionRates.inviteRate)),
+      stepBox('打診', k.invited),
+      arrowBox(pct(k.conversionRates.explainRate)),
+      stepBox('説明', k.explained),
+      arrowBox(pct(k.conversionRates.enrollRate)),
+      stepBox('入学', k.enrolled),
+      arrowBox(pct(k.conversionRates.sesRate)),
+      stepBox('SES契約', k.ses),
+    ].join('');
+
+    // rate alerts + rates text
+    document.getElementById('rateAlerts').innerHTML = rateAlerts(k.conversionRates);
+
+    document.getElementById('rates').textContent =
+`inviteRate（セミナー→打診）  : ${pct(k.conversionRates.inviteRate)}
+explainRate（打診→説明）    : ${pct(k.conversionRates.explainRate)}
+enrollRate（説明→入学）    : ${pct(k.conversionRates.enrollRate)}
+sesRate（入学→SES）        : ${pct(k.conversionRates.sesRate)}
+
+補足：
+- 「有料セミナー実施数」は本来 Seminar テーブル推奨。
+- モックでは seminarSessions を月ごとに保持可能（未設定なら0）。`;
+  }
+
+  // ============================
+  // Render: people
+  // ============================
+  function renderPeople(){
+    const list = peopleByFilter(filteredPeople(), STATE.pfilter);
+    const el = document.getElementById('peopleTable');
+
+    el.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>名前</th>
+            <th>email</th>
+            <th>Status</th>
+            <th>seminarDate</th>
+            <th>invitedAt</th>
+            <th>explainedAt</th>
+            <th>enrolledAt</th>
+            <th>sesContractAt</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(p=>`
+            <tr>
+              <td><a href="#" class="personLink" data-person="${p.id}">${p.name}</a></td>
+              <td>${p.email}</td>
+              <td><span class="chip">${p.status}</span></td>
+              <td>${fmt(p.seminarDate)}</td>
+              <td>${fmt(p.invitedAt)}</td>
+              <td>${fmt(p.explainedAt)}</td>
+              <td>${fmt(p.enrolledAt)}</td>
+              <td>${fmt(p.sesContractAt)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="footer">表示件数：${list.length}</div>
+    `;
+
+    el.querySelectorAll('.personLink').forEach(a=>{
+      a.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        const pid = ev.currentTarget.getAttribute('data-person');
+        document.getElementById('personSelect').value = pid;
+        STATE.personId = pid;
+        setTab('about');
+      });
+    });
+  }
+
+  // ============================
+  // Render: alerts
+  // ============================
+  function renderAlerts(){
+    let rows = alertsEngine(STATE.month);
+    if (STATE.afilter!=='all') rows = rows.filter(a=>a.priority===STATE.afilter);
+
+    const el = document.getElementById('alertsTable');
+    el.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th style="width:80px">scope</th>
+            <th style="width:160px">target</th>
+            <th style="width:110px">優先度</th>
+            <th>理由</th>
+            <th style="width:300px">推奨アクション</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(a=>`
+            <tr>
+              <td><span class="chip">${a.scope}</span></td>
+              <td>${a.target}</td>
+              <td>${priorityBadge(a.priority)}</td>
+              <td>${a.reason}</td>
+              <td>${a.recommended}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="footer">表示件数：${rows.length}</div>
+    `;
+
+    document.getElementById('alertRules').textContent =
+`月次（ファネル詰まり検知）
+- 打診率 < 30% → 注意（黄色）
+- 入学率 < 50% → 危険（赤）
+- SES転換率 < 60% → 危険（赤）
+
+Person（現場オペ）
+- SEMINAR なのに invitedAt が空（打診漏れ）
+- INVITED なのに explainedAt が空（説明未実施）
+- ENROLLED なのに sesContractAt が空（入学後SES未転換）
+- LOST は低優先度で記録`;
+  }
+
+  // ============================
+  // Tabs
+  // ============================
+  function setTab(tab){
+    STATE.tab = tab;
+    document.querySelectorAll('.tab').forEach(b=>{
+      const is = b.dataset.tab===tab;
+      b.setAttribute('aria-selected', is?'true':'false');
+    });
+    document.querySelectorAll('[role="tabpanel"]').forEach(p=> p.classList.add('hidden'));
+    document.getElementById(`panel-${tab}`).classList.remove('hidden');
+
+    // render on enter
+    if (tab==='dashboard') renderDashboard();
+    if (tab==='people') renderPeople();
+    if (tab==='alerts') renderAlerts();
+  }
+
+  // ============================
+  // Wire UI
+  // ============================
+  function hydrateMonth(){
+    const el = document.getElementById('month');
+    const def = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    el.value = def;
+    STATE.month = def;
+    el.addEventListener('change', ()=>{
+      STATE.month = el.value;
+      if (STATE.tab==='dashboard') renderDashboard();
+      if (STATE.tab==='alerts') renderAlerts();
+    });
+  }
+
+  function hydratePersonSelect(){
+    const sel = document.getElementById('personSelect');
+    sel.innerHTML = MOCK.people.map(p=> `<option value="${p.id}">${p.name}（${p.status}）</option>`).join('');
+    sel.value = STATE.personId;
+    sel.addEventListener('change', ()=>{
+      STATE.personId = sel.value;
+      // In a real app, you might show person detail. For mock, jump to /people with filters.
+      setTab('people');
+    });
+  }
+
+  function wireUI(){
+    document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=> setTab(b.dataset.tab)));
+
+    document.querySelectorAll('[data-pfilter]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        STATE.pfilter = b.getAttribute('data-pfilter');
+        renderPeople();
+      });
+    });
+
+    document.querySelectorAll('[data-afilter]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        STATE.afilter = b.getAttribute('data-afilter');
+        renderAlerts();
+      });
+    });
+
+    const q = document.getElementById('q');
+    q.addEventListener('input', ()=>{
+      STATE.q = q.value;
+      if (STATE.tab==='people') renderPeople();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      STATE.pfilter = 'all';
+      STATE.afilter = 'all';
+      STATE.q = '';
+      document.getElementById('q').value = '';
+      const def = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+      document.getElementById('month').value = def;
+      STATE.month = def;
+      setTab('dashboard');
+    });
+  }
+
+  // Init
+  hydrateMonth();
+  hydratePersonSelect();
+  wireUI();
+  setTab('dashboard');
+</script>
+</body>
+</html>
